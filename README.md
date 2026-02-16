@@ -20,32 +20,64 @@ This project runs a CodeAgent that can:
 
 ### Prerequisites
 
-- Python 3.10+
-- [uv](https://docs.astral.sh/uv/) package manager
+- Python 3.11+
+- [uv](https://docs.astral.sh/uv/) package manager (or pip)
 - llama.cpp server running at `http://127.0.0.1:8080`
 
 ### Install
 
 ```bash
-uv venv
-uv pip install "smolagents[toolkit]"
+# Clone and enter the project
+cd my-agent-project
+
+# Install dependencies
+uv pip install -e .
+# OR
+pip install -r requirements.txt
+
+# Create your .env file
+cp .env.example .env
+# Edit .env if needed (optional)
 ```
 
 ### Run
 
+**Interactive Mode (Recommended)**
 ```bash
-uv run python run_agent.py
+python -m src.cli
+```
+
+This launches an interactive REPL with commands:
+- `/help` - Show available commands
+- `/config` - Display current configuration
+- `/clear` - Clear conversation history
+- `/exit` or `/quit` - Exit the program
+
+**Single-Prompt Mode**
+```bash
+python -m src.cli "Create a test.txt file with hello world"
+```
+
+**Legacy Mode**
+```bash
+python run_agent.py  # Still works for backward compatibility
 ```
 
 ## Project Structure
 
 ```
 my-agent-project/
-├── run_agent.py      # Main agent script
-├── tools_local.py    # Custom tools (write_text, read_text, run_shell)
+├── src/
+│   ├── cli.py         # Interactive CLI (NEW)
+│   ├── agent.py       # Agent initialization
+│   ├── config.py      # Configuration management
+│   └── logger.py      # Structured logging
+├── tools_local.py     # Custom tools
+├── run_agent.py       # Legacy script
+├── .env.example       # Configuration template
 ├── docs/
-│   ├── setup.md      # Detailed setup guide
-│   └── tools.md      # Tools reference
+│   ├── setup.md       # Detailed setup guide
+│   └── tools.md       # Tools reference
 └── README.md
 ```
 
@@ -66,16 +98,24 @@ Two-layer safety system:
 
 ## Configuration
 
-### Model Settings (Optimized for 4B)
+All settings are configured via `.env` file (see `.env.example`):
 
-```python
-model = OpenAIServerModel(
-    model_id="Qwen3-4B-Instruct-2507-Q4_K_M.gguf",
-    api_base="http://127.0.0.1:8080/v1",
-    api_key="local",
-    temperature=0.1,  # Low temperature for reliability
-)
+```bash
+# LLM Configuration
+MODEL_ID=Qwen3-4B-Instruct-2507-Q4_K_M.gguf
+API_BASE=http://127.0.0.1:8080/v1
+TEMPERATURE=0.1
+
+# Agent Configuration
+STREAM_OUTPUTS=true
+MAX_STEPS=10
+
+# Logging
+LOG_LEVEL=INFO
+LOG_FILE=agent.log
 ```
+
+View current config with `/config` command in the CLI.
 
 ### Why temperature=0.1?
 
@@ -120,6 +160,55 @@ def write_text(path: str, content: str) -> str:
 2. **Clear docstrings** - Model relies on these
 3. **Return strings** - Easier for model to process
 4. **Handle errors gracefully** - Return error messages
+
+## Troubleshooting
+
+### Model Interpretation Quirks
+
+**Print Output Confusion**: Smaller models (like Qwen3-4B) sometimes misinterpret Python's `print()` return value:
+
+```python
+content = read_text("file.txt")  # Returns "Hello World"
+print(content)                    # Prints "Hello World", returns None
+# Model sees: Out: None
+```
+
+The model may conclude the file is empty when it sees `Out: None`, even though the **execution logs** show the correct content was printed. This is a model interpretation issue, not a tool failure.
+
+**Solution**: Check the **Execution logs** section in the output, not just the `Out:` line. The tools work correctly; the model is just confused by Python semantics.
+
+### Best Prompts for Small Models
+
+Small models (4B) work best with task-based prompts rather than conversational ones:
+
+✅ **Good prompts**:
+- "Create a file called test.txt with 'Hello World'"
+- "Calculate 25 multiplied by 4"
+- "Read the contents of README.md"
+- "List files using run_shell: ls -la"
+
+❌ **Problematic prompts**:
+- "Hello" (too vague)
+- "What can you do?" (conversational)
+- "What tools do you have?" (meta-question)
+
+### Model Recommendations
+
+For best results with CodeAgent:
+- **4B models**: Works but occasional confusion (Qwen3-4B)
+- **7B+ models**: Recommended for better reliability (Qwen2.5-Coder-7B, Mistral-7B)
+- **Coder models**: Specifically trained for code tasks (CodeQwen, Qwen2.5-Coder)
+
+### Connection Issues
+
+If you see connection errors:
+```bash
+# Verify llama.cpp is running
+curl http://127.0.0.1:8080/v1/models
+
+# Check your .env file
+cat .env | grep API_BASE
+```
 
 ## Documentation
 
