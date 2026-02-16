@@ -1,0 +1,63 @@
+# AI Assistant Rules
+
+## Code Style
+- Use type hints: `def func(name: str) -> str:`
+- Add docstrings to all functions
+- Max line length: 100 chars
+- Use snake_case for functions, PascalCase for classes
+
+## Structure
+- New code goes in `src/` directory
+- Tools go in `tools_local.py`
+- Tests go in `tests/test_*.py`
+- Config in `src/config.py`
+
+## Git
+- Use feature branches, never commit to main
+- Commit format: `feat:`, `fix:`, `docs:`, `test:`, `refactor:`
+- Update TODO.md when tasks complete
+
+## Security (CRITICAL)
+- Never commit .env files
+- Shell commands MUST use run_shell with approval
+- Validate all file paths (no ../../)
+- Log all errors with logger.error()
+
+## Error Handling
+```python
+try:
+    result = operation()
+    return f"Success: {result}"
+except Exception as e:
+    logger.error(f"Failed: {e}", exc_info=True)
+    return f"Error: {str(e)}"
+```
+
+## Tools Pattern
+```python
+@tool
+def tool_name(param: str) -> str:
+    """Brief description.
+    
+    Args:
+        param: What it does
+        
+    Returns:
+        What comes back
+    """
+    try:
+        return do_thing(param)
+    except Exception as e:
+        return f"Error: {e}"
+```
+
+## Configuration
+- All settings in .env file
+- Use `config.SETTING_NAME` not `os.getenv()`
+- Document in .env.example
+
+## Project Specifics
+- Temperature: 0.1-0.3 for small models
+- Always stream outputs
+- Require approval for shell commands
+- Log everything to agent.log
