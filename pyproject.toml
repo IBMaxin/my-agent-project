@@ -1,7 +1,44 @@
 [project]
 name = "my-agent-project"
 version = "0.1.0"
-description = "Add your description here"
+description = "A local AI agent using Hugging Face smolagents with llama.cpp"
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = []
+authors = [
+    {name = "IBMaxin", email = "bobbysj82@gmail.com"}
+]
+license = {text = "MIT"}
+dependencies = [
+    "smolagents[toolkit]>=1.0.0",
+    "python-dotenv>=1.0.0",
+    "rich>=13.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "ruff>=0.1.0",
+    "mypy>=1.7.0",
+]
+
+[project.scripts]
+agent = "src.cli:main"
+
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP"]
+ignore = []
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
